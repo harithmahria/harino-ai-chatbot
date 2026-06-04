@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harino.ai Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a2e;
+            color: #eee;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 420px;
+            height: 600px;
+            background: #16213e;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        /* === HEADER === */
+        .chat-header {
+            background: linear-gradient(135deg, #e94560, #c23152);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .chat-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .chat-header p {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        /* === BERICHTEN VENSTER === */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Berichten van de bot (links) */
+        .message.bot {
+            background: #0f3460;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        /* Berichten van de gebruiker (rechts) */
+        .message.user {
+            background: #e94560;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        /* Typing indicator */
+        .message.typing {
+            background: #0f3460;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            opacity: 0.7;
+        }
+
+        /* === INPUT VELD === */
+        .chat-input {
+            padding: 16px;
+            background: #0f3460;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            background: #16213e;
+            color: #eee;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .chat-input input::placeholder {
+            color: #666;
+        }
+
+        .chat-input button {
+            padding: 10px 20px;
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .chat-input button:hover {
+            background: #c23152;
+        }
+
+        .chat-input button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <!-- Header -->
+    <div class="chat-header">
+        <h1>Harino.ai Assistant</h1>
+        <p>Ask about pricing, credits, AI models, features, and support</p>
+    </div>
+
+    <!-- Berichten venster -->
+    <div class="chat-messages" id="chatMessages">
+        <div class="message bot">
+            Hi! I can help with Harino.ai pricing, credits, AI models, use cases, and support questions.
+        </div>
+    </div>
+
+    <!-- Input veld -->
+    <div class="chat-input">
+        <input
+            type="text"
+            id="userInput"
+            placeholder="Ask something about Harino.ai..."
+            autocomplete="off"
+        />
+        <button id="sendBtn" onclick="sendMessage()">Stuur</button>
+    </div>
+</div>
+
+<script>
+    const chatMessages = document.getElementById('chatMessages');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    // Stuur bericht als je op Enter drukt
+    userInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    async function sendMessage() {
+        const message = userInput.value.trim();
+        if (!message) return;
+
+        // 1. Toon het bericht van de gebruiker
+        addMessage(message, 'user');
+        userInput.value = '';
+        sendBtn.disabled = true;
+
+        // 2. Toon "aan het typen..."
+        const typingEl = addMessage('Even denken...', 'typing');
+
+        try {
+            // 3. Stuur naar de Flask API
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            });
+
+            const data = await response.json();
+
+            // 4. Verwijder "aan het typen..." en toon antwoord
+            typingEl.remove();
+            addMessage(data.reply, 'bot');
+
+        } catch (error) {
+            typingEl.remove();
+            addMessage('Sorry, er ging iets mis. Probeer het opnieuw.', 'bot');
+        }
+
+        sendBtn.disabled = false;
+        userInput.focus();
+    }
+
+    function addMessage(text, type) {
+        const div = document.createElement('div');
+        div.className = `message ${type}`;
+        div.textContent = text;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return div;
+    }
+</script>
+
+</body>
+</html>

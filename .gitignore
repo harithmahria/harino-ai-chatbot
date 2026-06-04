@@ -1,0 +1,12 @@
+# Virtual environment - niet uploaden (te groot, iedereen maakt zijn eigen)
+venv/
+
+# Geheime keys - NOOIT uploaden!
+.env
+
+# Python cache bestanden
+__pycache__/
+*.pyc
+
+# Local logs
+*.log
