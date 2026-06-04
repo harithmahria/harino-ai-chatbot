@@ -4,6 +4,7 @@ import traceback
 
 from flask import Flask, jsonify, render_template, request, session
 from flask_cors import CORS
+from postgrest.exceptions import APIError
 
 from rag import OPENAI_KEY, SUPABASE_KEY, SUPABASE_URL, chat, openai_client, supabase
 
@@ -30,6 +31,8 @@ def health_check():
     try:
         supabase.table("documents").select("id").limit(1).execute()
         checks["supabase"] = "ok"
+    except APIError as exc:
+        checks["supabase"] = f"failed: {exc.message}"
     except Exception as exc:
         checks["supabase"] = f"failed: {type(exc).__name__}"
 
