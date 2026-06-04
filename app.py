@@ -5,7 +5,7 @@ import traceback
 from flask import Flask, jsonify, render_template, request, session
 from flask_cors import CORS
 
-from rag import chat
+from rag import OPENAI_KEY, SUPABASE_KEY, SUPABASE_URL, chat, openai_client, supabase
 
 app = Flask(__name__)
 CORS(app)
@@ -15,6 +15,34 @@ app.secret_key = os.getenv("SECRET_KEY", "harino-ai-local-dev-secret")
 @app.route("/")
 def home():
     return render_template("index.html")
+
+
+@app.route("/api/health")
+def health_check():
+    checks = {
+        "supabase_url_set": bool(SUPABASE_URL),
+        "supabase_key_set": bool(SUPABASE_KEY),
+        "openai_key_set": bool(OPENAI_KEY),
+        "supabase": "not_checked",
+        "openai": "not_checked",
+    }
+
+    try:
+        supabase.table("documents").select("id").limit(1).execute()
+        checks["supabase"] = "ok"
+    except Exception as exc:
+        checks["supabase"] = f"failed: {type(exc).__name__}"
+
+    try:
+        response = openai_client.get(
+            "https://api.openai.com/v1/models",
+            headers={"Authorization": f"Bearer {OPENAI_KEY}"},
+        )
+        checks["openai"] = "ok" if response.is_success else f"failed: {response.status_code}"
+    except Exception as exc:
+        checks["openai"] = f"failed: {type(exc).__name__}"
+
+    return jsonify(checks)
 
 
 @app.route("/api/chat", methods=["POST"])
