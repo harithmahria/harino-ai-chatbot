@@ -194,6 +194,9 @@
             });
 
             const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Chat API failed');
+            }
 
             // 4. Verwijder "aan het typen..." en toon antwoord
             typingEl.remove();
@@ -201,7 +204,7 @@
 
         } catch (error) {
             typingEl.remove();
-            addMessage('Sorry, er ging iets mis. Probeer het opnieuw.', 'bot');
+            addMessage(`Sorry, er ging iets mis: ${error.message}`, 'bot');
         }
 
         sendBtn.disabled = false;

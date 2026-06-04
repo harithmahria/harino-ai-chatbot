@@ -1,5 +1,6 @@
 import uuid
 import os
+import traceback
 
 from flask import Flask, jsonify, render_template, request, session
 from flask_cors import CORS
@@ -27,8 +28,15 @@ def chat_endpoint():
     if "session_id" not in session:
         session["session_id"] = str(uuid.uuid4())
 
-    reply = chat(user_message, session_id=session["session_id"])
-    return jsonify({"reply": reply})
+    try:
+        reply = chat(user_message, session_id=session["session_id"])
+        return jsonify({"reply": reply})
+    except Exception as exc:
+        print("Chat API error:", repr(exc), flush=True)
+        traceback.print_exc()
+        return jsonify({
+            "error": "Chat API failed. Check Railway variables and deployment logs."
+        }), 500
 
 
 if __name__ == "__main__":
